@@ -1,2 +1,2 @@
-# generative_agent_crewAI
+# crewAI
 mini aiffel-thon
