@@ -20,9 +20,10 @@ if st.session_state.page == "page1":  #첫 화면
 
         st.write("")
 
-        if st.button("GAME START!", key="gamestart"):
+        def movetopage2():
             st.session_state.page = "page2"
-            st.rerun()
+        st.button("GAME START!", key="gamestart", on_click=movetopage2)
+           
         
 elif st.session_state.page == "page2":  # 컨테이너 숨김 상태일 때
     # 컨테이너가 사라진 후에 표시할 내용 (예: 게임 화면)
@@ -34,7 +35,7 @@ elif st.session_state.page == "page2":  # 컨테이너 숨김 상태일 때
 
     with col1:
         theme = st.text_input("",placeholder="예: 어둠 속의 미궁, 고대 유적 탐험")
-    
+        
     if st.button("NEXT",key="nextfrom2page"):
         if theme.strip() == "":  # 입력값이 비어있거나 공백만 있는 경우
             st.warning("테마를 입력해주세요!")  # 경고 메시지 표시

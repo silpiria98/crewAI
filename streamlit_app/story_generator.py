@@ -133,7 +133,7 @@ create_player_task = Task(
     "우선 그 인물의 직업을 5개정도 생성하고 무작위로 하나를 선택합니다. "
     "그 인물의 인적사항을 출력합니다",
     expected_output="당신은 '(직업)'입니다'로 시작해서 인적사항을 적습니다.",
-    agent=ending_agent,
+    agent=create_player_agent,
 )
 
 story_crew = Crew(
@@ -184,7 +184,7 @@ def story_creation(chapter_num, crew, theme, storyfile, logfile):
     story_result = crew.kickoff(
         inputs={"theme": theme, "previous_story": previous_story}
     )
-    story_text = f"### Chapter{chapter_num} :\n{story_result}\n\n"
+    story_text = f"## Chapter{chapter_num} \n{story_result}\n\n"
 
     # 초기 캐릭터 만들때 파일을 생성해서 그냥 a로
     with open(logfile, "a", encoding="utf-8") as file:
@@ -218,7 +218,7 @@ def create_options(crew, theme, storyfile, logfile):
 # 스트림릿 용 사용자 선택 함수
 def user_selection_streamlit(choices_creation, selected_num, storyfile, logfile):
 
-    story_text = f"### 사용자 선택 : {selected_num}\n\n\n"
+    story_text = f"## 사용자 선택 {selected_num}\n\n\n"
 
     line = f"{choices_creation}\n\n\n"
 
@@ -244,7 +244,7 @@ def story_ending(crew, theme, storyfile, logfile):
     story_result = crew.kickoff(
         inputs={"theme": theme, "previous_story": previous_story}
     )
-    story_result_md = f"### 엔딩 :\n{story_result}\n\n"
+    story_result_md = f"## 엔딩 \n{story_result}\n\n"
 
     # 이야기 내용을 파일에 저장
     with open(storyfile, "a", encoding="utf-8") as file:
