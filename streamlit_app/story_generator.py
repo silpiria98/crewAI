@@ -1,7 +1,3 @@
-
-
-
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,6 +17,7 @@ llm1 = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash", google_api_key=os.getenv("GEMINI_API_KEY")
 )
 llm = ChatOpenAI(model="gpt-3.5-turbo", api_key=os.getenv("GPT_API_KEY"))
+
 
 def generateimage(chapter_content):
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -46,6 +43,7 @@ def generateimage(chapter_content):
         return ""
 
     return filepath
+
 
 story_agent = Agent(
     role="이야기 생성자",
@@ -93,15 +91,17 @@ create_player_agent = Agent(
 
 # 이야기 생성 작업
 story_creation_task = Task(
-    description="{theme} 배경으로 흥미로운 상황을 생성하세요."
-    "주인공의 선택을 마음대로 결정해서는 안됩니다. "
-    "주인공이 처한 상황, 다른 인물이 걸어오는 대사 등을 생성합니다. "
-    "이야기는 주인공이 어떤 선택을 해야 할 상황에서 끝나도록 하세요."
-    "이전의 내용이 있다면 이어지도록 상황을 생성하세요"
-    "{previous_story}에 이어지는 새로운 상황을 생성하세요",
-    expected_output="200글자 내외의 흥미로운 상황이 생성됩니다."
-    "주인공의 어떤 행동을 결심하거나 행동하거나, 말하거나 하는 내용을 생성하면 안됩니다.  "
-    "주인공이 어떤 행동을 할지 궁금해하지 말고 스토리만 생성합니다. ",
+    description=(
+        "1. 나열된 규칙을 지키면서 {theme} 배경에 자연스럽고 {previous_story}에 이어지는 새로운 상황을 생성하세요.\n"
+        "규칙 1. 주인공의 선택을 마음대로 결정해서는 안됩니다.\n"
+        "규칙 2. 주인공이 처한 상황, 다른 인물이 걸어오는 대사 등을 포함합니다.\n"
+        "규칙 3. 이야기는 주인공이 어떤 선택을 해야 할 상황에서 끝나도록 하세요.\n"
+        "규칙 4. 주인공이 어떤 행동을 할지 질문하거나 궁금해하지 말고, 주인공의 결정을 요구하는 문장 없이 스토리만 생성합니다.\n"
+        "규칙 5. 상황을 마무리하는 문장으로 질문이나 선택을 요구하는 문장이 포함되지 않도록 하세요."
+    ),
+    expected_output=(
+        "200글자 내외의 흥미로운 상황이 생성됩니다.\n" "반드시 한국어로 생성하세요."
+    ),
     agent=story_agent,
 )
 
@@ -120,7 +120,9 @@ choice_creation_task = Task(
 
 # 이야기 결말 작업
 ending_task = Task(
-    description="{previous_story}를 보고 적절한 결말을 생성하세요",
+    description="{previous_story}에 이어지는 결말을 생성하세요"
+    "이야기가 마무리되는 느낌으로 되어야 합니다. "
+    "'나의 이야기는 이제부터 시작될 것이다.' 등과 같이 새로운 이야기를 암시하는 내용은 포함하지 않습니다. ",
     expected_output="줄글의 형식으로 생성하세요." "반드시 한국어로 생성하세요.",
     agent=ending_agent,
 )
@@ -154,12 +156,9 @@ story_crew = Crew(
 )
 
 
-
-        
-
-#캐릭터 생성함수
-def character_creation(crew,theme,storyfile,logfile):
-        # 플레이어 생성
+# 캐릭터 생성함수
+def character_creation(crew, theme, storyfile, logfile):
+    # 플레이어 생성
     crew.tasks = [create_player_task]
     player_info = crew.kickoff(inputs={"theme": theme, "previous_story": ""})
 
@@ -170,11 +169,12 @@ def character_creation(crew,theme,storyfile,logfile):
     # 스토리와 선택지 포함해서 모든 정보 저장
     with open(logfile, "w", encoding="utf-8") as file:
         file.write(f"{player_info}\n\n\n")
-    
+
     return player_info
 
+
 # 이야기 생성 함수
-def story_creation(chapter_num,crew, theme, storyfile, logfile):
+def story_creation(chapter_num, crew, theme, storyfile, logfile):
 
     # 스토리 파일 읽고 이야기 생성
     with open(storyfile, "r", encoding="utf-8") as file:
@@ -216,13 +216,12 @@ def create_options(crew, theme, storyfile, logfile):
 
 
 # 스트림릿 용 사용자 선택 함수
-def user_selection_streamlit(choices_creation, selected_num,storyfile, logfile):
-    
+def user_selection_streamlit(choices_creation, selected_num, storyfile, logfile):
+
     story_text = f"### 사용자 선택 : {selected_num}\n\n\n"
 
-
     line = f"{choices_creation}\n\n\n"
-    
+
     # 로그에 사용자가 선택한 숫자 추가
     with open(logfile, "a", encoding="utf-8") as file:
         file.write(story_text)
@@ -231,32 +230,32 @@ def user_selection_streamlit(choices_creation, selected_num,storyfile, logfile):
     with open(storyfile, "a", encoding="utf-8") as file:
         file.write(line)
 
-
     return True
 
+
 def story_ending(crew, theme, storyfile, logfile):
-            
-            with open(storyfile, "r", encoding="utf-8") as file:
-                previous_story = file.read()
 
-            # 이야기 생성
-            crew.tasks = [ending_task]
+    with open(storyfile, "r", encoding="utf-8") as file:
+        previous_story = file.read()
 
-            story_result = crew.kickoff(
-                inputs={"theme": theme, "previous_story": previous_story}
-            )
-            story_result_md = f"### 엔딩 :\n{story_result}\n\n"
+    # 이야기 생성
+    crew.tasks = [ending_task]
 
-            # 이야기 내용을 파일에 저장
-            with open(storyfile, "a", encoding="utf-8") as file:
-                file.write(story_result_md)
+    story_result = crew.kickoff(
+        inputs={"theme": theme, "previous_story": previous_story}
+    )
+    story_result_md = f"### 엔딩 :\n{story_result}\n\n"
 
-            # 로그 기록
-            with open(logfile, "a", encoding="utf-8") as file:
-                file.write(story_result_md)
+    # 이야기 내용을 파일에 저장
+    with open(storyfile, "a", encoding="utf-8") as file:
+        file.write(story_result_md)
 
-            return story_result
-    
+    # 로그 기록
+    with open(logfile, "a", encoding="utf-8") as file:
+        file.write(story_result_md)
+
+    return story_result
+
 
 # def execute_story(
 #     crew,
@@ -268,15 +267,15 @@ def story_ending(crew, theme, storyfile, logfile):
 # ):
 #     character_creation(crew,theme,storyfile,logfile)
 
-            
-#     for i in range(9):        
+
+#     for i in range(9):
 
 #         # 요약을 읽기 / 이야기 생성 / 문장 저장
 #         story_result = story_creation(crew, theme, storyfile, logfile)
 
 #         # 이미지 생성 부분 result가 파일 위치
 #         # result = generateimage(story_result)
-        
+
 #         # 선택지 생성 / 선택지 내용 저장
 #         choices_creation = create_options(crew, theme, storyfile, logfile)
 
