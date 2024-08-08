@@ -1,6 +1,7 @@
 import streamlit as st
 import story_generator
-import re
+import re,os
+import image_generator
 
 st.set_page_config(
     page_title="아이펠 던전 AI"
@@ -72,21 +73,21 @@ elif st.session_state.page == "page3":
                 
 
 elif st.session_state.page == "page4":
+     # 상황 count
+    if "count_scene" not in st.session_state:
+            st.session_state.count_scene = 1
+
+    if st.session_state.count_scene == 8: #7회까지만 진행 후 엔딩
+            st.session_state.page = "page5"
+            st.session_state.show_story = False
+            st.rerun()  
+
     if "show_story" not in st.session_state:
         st.session_state.show_story = True
 
     if st.session_state.show_story:   #테마가 rerun 되었을때
-        print(st.session_state['show_story'])   #############################################################################################    
         st.caption(f"선택된 테마 : {st.session_state.theme}")
-        
-        # 상황 count
-        if "count_scene" not in st.session_state:
-            st.session_state.count_scene = 1
-        
-        if st.session_state.count_scene == 8: #7회까지만 진행 후 엔딩
-            st.session_state.page = "page5"
-            st.session_state.show_story = False
-            st.rerun()  
+
         
         st.text(f"#상황. {st.session_state.count_scene}")
         
@@ -126,48 +127,20 @@ elif st.session_state.page == "page4":
             
             
         #선택지 1
-        if st.button(choices_lines[0], key=0):
-            st.session_state.option_selected = choices_lines[0]
-            st.session_state.option_selected_num = 0
-            continue_story = story_generator.user_selection_streamlit(st.session_state.option_selected,
-                                                                st.session_state.option_selected_num, 
-                                                                "story.md", 
-                                                                "log.md") #사용자가 선택한 정보를 기록
-            st.rerun()
+        def selectedinfo(selected_line, num):
+            story_generator.user_selection_streamlit(selected_line, 
+                                                     num,
+                                                     "story.md", 
+                                                     "log.md") #사용자가 선택한 정보를 기록
 
-        #선택지 2
-        elif st.button(choices_lines[1],key=1):
-            st.session_state.option_selected = choices_lines[1]
-            st.session_state.option_selected_num = 1
-            continue_story = story_generator.user_selection_streamlit(st.session_state.option_selected,
-                                                                st.session_state.option_selected_num, 
-                                                                "story.md", 
-                                                                "log.md")
-            st.rerun()
-        
-        #선택지 3
-        elif st.button(choices_lines[2],key=2):
-            st.session_state.option_selected = choices_lines[2]
-            st.session_state.option_selected_num = 2
-            continue_story = story_generator.user_selection_streamlit(st.session_state.option_selected,
-                                                                st.session_state.option_selected_num, 
-                                                                "story.md", 
-                                                                "log.md")
-            st.rerun()
-
-        #선택지 4
-        elif st.button(choices_lines[3],key=3):
-            st.session_state.option_selected = choices_lines[3]
-            st.session_state.option_selected_num = 3
-            continue_story = story_generator.user_selection_streamlit(st.session_state.option_selected,
-                                                                st.session_state.option_selected_num, 
-                                                                "story.md", 
-                                                                "log.md")
-            st.rerun()
+        st.button(choices_lines[0], key=0, on_click=lambda: selectedinfo(choices_lines[0], 0))
+        st.button(choices_lines[1], key=1, on_click=lambda: selectedinfo(choices_lines[1], 1))
+        st.button(choices_lines[2], key=2, on_click=lambda: selectedinfo(choices_lines[2], 2))
+        st.button(choices_lines[3], key=3, on_click=lambda: selectedinfo(choices_lines[3], 3))
     
         col1, col2, col3 = st.columns([1,1,1])
         with col1:
-            st.button("직접 선택지 작성",key=4)
+            st.button("직접 선택지 작성 하기",key=4)
 
         #선택지 5
         with col3:
@@ -179,13 +152,10 @@ elif st.session_state.page == "page4":
                 
 
 elif st.session_state.page == "page5":
-    
-    
     if "show_ending" not in st.session_state:  
             st.session_state.show_ending = True
+
     if st.session_state.show_ending:
-        print(st.session_state['show_ending'])   #############################################################################################
-        print(st.session_state['show_story'])
         st.caption(f"선택된 테마 : {st.session_state.theme}")
         st.text(f"#엔딩..")
         
@@ -194,12 +164,15 @@ elif st.session_state.page == "page5":
                                                     "story.md",
                                                     "log.md")
         st.write(ending_story)
+        if "generated_image_path" not in st.session_state:  
+            st.session_state.generated_image_path = ""
+        st.session_state.generated_image_path= image_generator.generateimage(ending_story,"story.md")
         #사용자 선택 / 선택한 내용 저장
         def nextpage_clicked_onpage5():
             st.session_state.page = "page6"
             st.session_state.show_ending = False
         
-        st.button("NEXT",key="pagefrom6page",on_click= nextpage_clicked_onpage5)
+        st.button("모험기록 보기",key="pagefrom6page",on_click= nextpage_clicked_onpage5)
                     
         
             
@@ -214,3 +187,4 @@ elif st.session_state.page == "page6":
     
     # Streamlit에 출력
     st.markdown(log_content, unsafe_allow_html=True)
+    st.image(st.session_state.generated_image_path, caption="", use_column_width=True)

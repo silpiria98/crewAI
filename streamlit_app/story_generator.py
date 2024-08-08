@@ -7,7 +7,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from crewai import Agent, Task, Crew, Process
-from crewai_tools import tools
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from openai import OpenAI
@@ -100,7 +99,7 @@ story_creation_task = Task(
         "규칙 5. 상황을 마무리하는 문장으로 질문이나 선택을 요구하는 문장이 포함되지 않도록 하세요."
     ),
     expected_output=(
-        "200글자 내외의 흥미로운 상황이 생성됩니다.\n" "반드시 한국어로 생성하세요."
+        "200글자 내외의 흥미로운 상황이 생성됩니다."
     ),
     agent=story_agent,
 )
@@ -109,8 +108,7 @@ story_creation_task = Task(
 # 필요하면 추가 : "선택지는 1.~ 2.~ 3.~ 4.~ 순으로 제공되고 선택지마다 줄바꿈을 해서 출력하세요"
 choice_creation_task = Task(
     description="이야기 상황에 맞는 4가지 선택지를 생성하세요. 각 선택지는 이야기와 관련이 있어야 합니다."
-    "{previous_story}와 이어지며, 마지막으로 제시된 상황에 맞는 선택지를 생성하세요. \n"
-    "5번째 선택지는 고정적으로 '여기서 이야기의 마무리합니다.'입니다.",
+    "{previous_story}와 이어지며, 마지막으로 제시된 상황에 맞는 선택지를 생성하세요. \n",
     expected_output="상황에 맞는 4가지 선택지가 생성됩니다.\n"
     "모든 선택지 앞에 1. 2. 3. 4. 같이 숫자를 붙이세요\n"
     "각 선텍지는 줄바꿈 하여 출력하세요",
@@ -123,7 +121,7 @@ ending_task = Task(
     description="{previous_story}에 이어지는 결말을 생성하세요"
     "이야기가 마무리되는 느낌으로 되어야 합니다. "
     "'나의 이야기는 이제부터 시작될 것이다.' 등과 같이 새로운 이야기를 암시하는 내용은 포함하지 않습니다. ",
-    expected_output="줄글의 형식으로 생성하세요." "반드시 한국어로 생성하세요.",
+    expected_output="줄글의 형식으로 생성하세요.",
     agent=ending_agent,
 )
 
@@ -220,17 +218,15 @@ def user_selection_streamlit(choices_creation, selected_num, storyfile, logfile)
 
     story_text = f"## 사용자 선택 {selected_num}\n\n\n"
 
-    line = f"{choices_creation}\n\n\n"
-
+    line = f"{choices_creation[2:]}\n\n\n"
+    
     # 로그에 사용자가 선택한 숫자 추가
     with open(logfile, "a", encoding="utf-8") as file:
         file.write(story_text)
 
     # story.md 에 선택한 내용 추가
     with open(storyfile, "a", encoding="utf-8") as file:
-        file.write(line)
-
-    return True
+        file.write(f"나의 선택 : {line}")
 
 
 def story_ending(crew, theme, storyfile, logfile):
@@ -255,29 +251,3 @@ def story_ending(crew, theme, storyfile, logfile):
         file.write(story_result_md)
 
     return story_result
-
-
-# def execute_story(
-#     crew,
-#     theme,
-#     logfile="log.md",
-#     storyfile="story.md",
-#     # summary = 'summary.md',
-#     # generated_story = 'generated_story.md'
-# ):
-#     character_creation(crew,theme,storyfile,logfile)
-
-
-#     for i in range(9):
-
-#         # 요약을 읽기 / 이야기 생성 / 문장 저장
-#         story_result = story_creation(crew, theme, storyfile, logfile)
-
-#         # 이미지 생성 부분 result가 파일 위치
-#         # result = generateimage(story_result)
-
-#         # 선택지 생성 / 선택지 내용 저장
-#         choices_creation = create_options(crew, theme, storyfile, logfile)
-
-#         # 사용자 선택 / 선택한 내용 저장
-#         continue_story = user_selection(choices_creation, storyfile, logfile)
